@@ -3,10 +3,21 @@ Kata
 
 Javascript JSON templating engine
 
-## Install
+## API
 
-    $ npm install kata
-    
+````js
+var kata = require('kata');
+var fs = require('fs');
+
+fs.readFile('template.kata', {encoding: 'utf8'}, function(err, src){
+  var template;
+  if (err) return;
+
+  template = kata.compile(src);
+  console.log(template({greeting: 'Hello', name: 'World'}));
+});
+````
+
 ## Template Syntax
 
 Kata templates employ nine different types of blocks.
