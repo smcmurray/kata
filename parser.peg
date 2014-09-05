@@ -9,7 +9,7 @@ output = sym:content {return 'out += "' + sym.replace(/[\r\n]/g, '\\n') + '";\n'
 
 template =
   ws* "{{%" name:identifier? sig:sig
-    body:block/extend* 
+    body:(block/yield)* 
   ws* "%"? "}}"
   {var f ='function *' + (name ? name : '') +sig +'{\n'
         + ' var out = "";\n'
@@ -32,17 +32,18 @@ include =
   {return 'var '+ alias + ' = require('+expr+');\n'}
  
 invoke =
-  ws* "{{>" target:identifier ws* (parenthetical/(parenthetical (ws* "," ws* parenthetical)*))
+  ws* "{{>" target:(identifier ws* (parenthetical/("(" parenthetical (ws* "," ws* parenthetical)* ")" )))
     body:template*
   ws* "<"? "}}"
-  {return '(function(){'
-    +'  var mixins = {};'
-    +'  var gen = '+ target +sig + ', step=gen.next();'
+  {var ret = '(function(){'
+    +'  var gen = ' + target + ', step=gen.next();'
+    +'  var mixins = {';
 
-    +'  body.forEach(function(f){'
-    +'    mixins[f.kataname] = f;'
-    +'  });'
+    body.forEach(function(f){
+      ret += '"' + f.kataname + '": ' + f;
+    });
 
+    ret += '};'
     +'  while (!step.done){'
     +'    if (0 > mixins.indexOf(step.value)){'
     +'        mixins[step.value]();'
@@ -50,20 +51,25 @@ invoke =
     +'    }'
     +'    else step = gen.next();'
     +'  }'
-    +'}());\n'}
+    +'}());\n';
 
-extend =
+    return ret;
+  }
+
+yield =
   ws* "{{<" mixin:identifier
+    body:block*
   ws* ">"? "}}"
   {return 'try {'
-    +'  yield mixin;'
+    +'  yield (' + mixin + ');'
     +'} catch (){'
     +   (body.length ? body.join('') : '')
-    +'}'
+    +'}';
+  }
 
 conditional =
   ws* "{{?" expr:parenthetical
-    body: (block/else)*
+    body:(block/else)*
   ws* "?"? "}}"
   {return 'if ('+expr+'){'
     + body
