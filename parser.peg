@@ -1,6 +1,6 @@
 start = template
 
-marker = "{{" / [%@<>\+\?]? "}}"
+marker = "{{" / ([%@<>\+\?\:\!])? "}}"
 
 content = sym:(!marker .)+ & {return sym.reduce(function(o,i){return o.concat(i)}, []).join('').replace(/\s+/,'')}
   { return sym.reduce(function(o,i){return o.concat(i)}, []).join('') }
@@ -12,11 +12,12 @@ template =
     body:(block/yield)* 
   ws* "%"? "}}"
   {var f ='function *' + (name ? name : '') +sig +'{\n'
-        + ' var out = "";\n'
-        +   (body.length ? body.join('') : '')
-        + '}\n';
-  f.kataname = name;
-  return f;}
+      + '  var out = "";'
+      +    (body.length ? body.join('') : '')
+      + '}\n';
+    f.kataname = name;
+    return f;
+  }
 
 iterate =
   ws* "{{@(" expr:parenthetical sig:sig
@@ -24,7 +25,8 @@ iterate =
   ws* "@"? "}}"
   {return 'eval(' + expr.reduce(function(o,i){return o.concat(i)}, []).join('') + ').forEach(function' +sig + '{\n'
     + (body.length ? body.join('') : '')
-    + '}\n'}
+    + '}\n';
+  }
 
 include =
   ws* "{{+" alias:identifier expr:parenthetical
@@ -47,7 +49,7 @@ invoke =
     +'  while (!step.done){'
     +'    if (0 > mixins.indexOf(step.value)){'
     +'        mixins[step.value]();'
-    +'        step = gen.throw(new Error('Extension not found'));'
+    +'        step = gen.throw(new Error("Extension not found"));'
     +'    }'
     +'    else step = gen.next();'
     +'  }'
@@ -62,9 +64,9 @@ yield =
   ws* ">"? "}}"
   {return 'try {'
     +'  yield (' + mixin + ');'
-    +'} catch (){'
+    +'} catch (ex){'
     +   (body.length ? body.join('') : '')
-    +'}';
+    +'}\n';
   }
 
 conditional =
@@ -72,7 +74,7 @@ conditional =
     body:(block/else)*
   ws* "?"? "}}"
   {return 'if ('+expr+'){'
-    + body
+    + body.join('')
     + '}\n'
   }
 
@@ -80,10 +82,10 @@ else =
   ws* "{{:" expr:parenthetical?
     body:block*
   ws* ":"? "}}"
-  {return '/*{ needed for parser generator */'
-    +'} else '+ (expr ? 'if ' + expr : '') + '{'
-    +'/* needed for parser generator}*/'
+  {return /*{ needed for parser generator */
+    '} else '+ (expr ? 'if ' + expr : '') + '{'
     + body.join('');
+    /* needed for parser generator }*/
   }
 
 interpolate =
@@ -92,7 +94,7 @@ interpolate =
 
 evaluate =
   ws* "{{!" expr:content "!"? "}}"
-  {return expr + (expr.slice(-1) === ';' ? '' : ';')}
+  {return expr}
 
 block = template/iterate/invoke/include/output/conditional
 
