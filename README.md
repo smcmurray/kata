@@ -7,7 +7,7 @@ Javascript JSON templating engine
 
     $ npm install kata
     
-## API
+## Template Syntax
 
 Kata templates employ nine different types of blocks.
 
