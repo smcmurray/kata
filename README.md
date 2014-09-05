@@ -72,7 +72,7 @@ Invoke blocks will invoke named templates and pass them the arguments specified.
 Yield block allow Template blocks to be extended by yielding to the template that invoked them.
 
 * `expression` - A Javascript expression that will evaluate to the name of a child template within the Invoke block that invoked this template.
-* `body` - The body of the block contains the content you wish to render. It can contain all the blocks types except Else blocks (which can only be included in conditional blocks). It can also contain any non-block content you wish to render.
+* `body` - The body of the block contains the fallback content you wish to render. The contents of a yield block are only rendered if a matching extension template was not found in the Invoke block that invoked the parent Template block. A Yield block can contain all the block types except Else blocks (which can only be included in conditional blocks). It can also contain any non-block content you wish to render.
 
 ### <a name="Include"></a> Include block {{+alias(expression)[+]}}
 
