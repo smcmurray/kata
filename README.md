@@ -3,25 +3,25 @@ Kata
 
 Javascript JSON templating engine
 
-++ Install
+## Install
 
     $ npm install kata
     
-++ API
+## API
 
 Kata templates employ nine different types of blocks.
 
-* {{% Template block %}}
-* {{ Interpolate block }}
-* {{@ Iterate block @}}
-* {{? Conditional block ?}}
-* {{: Else block :}}
-* {{> Invoke block <}}
-* {{< Yield block >}}
-* {{+ Include block +}}
-* {{! Evaluate block !}}
+* {{% [Template block](#Template) %}}
+* {{ [Interpolate block](#Interpolate) }}
+* {{@ [Iterate block](#Iterate) @}}
+* {{? [Conditional block](#Conditional) ?}}
+* {{: [Else block](#Else) :}}
+* {{> [Invoke block](#Invoke) <}}
+* {{< [Yield block](#Yield) >}}
+* {{+ [Include block](#Include) +}}
+* {{! [Evaluate block](#Evaluate) !}}
 
-+++ Template block {{%[name]([argument [, argument...]]) body [%]}}
+### <a name="Template"></a> Template block {{%[name]([argument [, argument...]]) body [%]}}
 
 All templates must be contained within a template block. Template blocks are converted to javascript functions. A template block has the following elements:
 
@@ -29,13 +29,13 @@ All templates must be contained within a template block. Template blocks are con
 * `arguments` - (optional) Arguments are part of the function signature. Values passed to the template will be assigned to variables of these names within the template.
 * `body` - The body of the block contains the content you wish to render. It can contain all the blocks types except Else blocks (which can only be included in conditional blocks). It can also contain any non-block content you wish to render.
 
-+++ Interpolate block {{ body }}
+### <a name="Interpolate"></a> Interpolate block {{ body }}
 
 Contents of Interpolate blocks are interpolated as a javascript expression and rendered directly.
 
 * `body` - A javascript expression. Interpolate blocks cannot contain any block types.
 
-+++ Iterate block {{@(expression)(value [, index [, array]]) body [@]}}
+### <a name="Iterate"></a> Iterate block {{@(expression)(value [, index [, array]]) body [@]}}
 
 Iterate blocks perform a Javascript forEach iteration over the results of the provided expression.
 
@@ -45,21 +45,21 @@ Iterate blocks perform a Javascript forEach iteration over the results of the pr
 * `array` - (optional) the name of the variable to be assigned the value of the array over which the template iterates
 * `body` The body of the block contains the content you wish to render. It can contain all the blocks types except Else blocks (which can only be included in conditional blocks). It can also contain any non-block content you wish to render for each iteration.
 
-+++ Conditional block {{?(expression) body [?]}}
+### <a name="Conditional"></a> Conditional block {{?(expression) body [?]}}
 
 Conditional block provide an if/else ability
 
 * `expression` - A Javascript expression. The contents of the block are rendered if the expression is truthy.
 * `body` - The body of the block contains the content you wish to render. It can contain all the blocks types. It can also contain any non-block content you wish to render.
 
-+++ Else block {{|(expression) body [|]}}
+### <a name="Else"></a> Else block {{|(expression) body [|]}}
 
 Else blocks provide the 'else' ability of a Conditional block. They can take an optional expression to take on an 'else if ' nature.
 
 * `expression` - (optional) A Javascript expression. The contents of the block are rendered if the expression is truthy. If omitted, the contents of the block are rendered if the expression of the parent Conditional block is falsy.
 *`body` - The body of the block contains the content you wish to render. It can contain all the blocks types except Else blocks (which can only be included in conditional blocks). It can also contain any non-block content you wish to render.
 
-+++ Invoke block {{>name(argument [, argument...]) body [<]}}
+### <a name="Invoke"></a> Invoke block {{>name(argument [, argument...]) body [<]}}
 
 Invoke blocks will invoke named templates and pass them the arguments specified. Invoke blocks can extend the invoked block by defining child templates.
 
@@ -67,21 +67,21 @@ Invoke blocks will invoke named templates and pass them the arguments specified.
 * `arguments` - Values to pass to the invoked template
 * `body` - The body of an Invoke block can only contain Template blocks
 
-+++ Yield block {{<(expression) body [>]}}
+### <a name="Yield"></a> Yield block {{<(expression) body [>]}}
 
 Yield block allow Template blocks to be extended by yielding to the template that invoked them.
 
 * `expression` - A Javascript expression that will evaluate to the name of a child template within the Invoke block that invoked this template.
 * `body` - The body of the block contains the content you wish to render. It can contain all the blocks types except Else blocks (which can only be included in conditional blocks). It can also contain any non-block content you wish to render.
 
-+++ Include block {{+alias(expression)[+]}}
+### <a name="Include"></a> Include block {{+alias(expression)[+]}}
 
 An Include block can import an external template.
 
 * `alias` - The name assigned to the imported template.
 * `expression` - A javascript expression that will be evaluated and used as the path from which to import the template.
 
-+++ Evaluate block {{! expression [!]}}
+### <a name="Evaluate"></a> Evaluate block {{! expression [!]}}
 
 Evaluate blocks do not inject content into the rendered document directly. But they can be used to change variable values etc.
 
