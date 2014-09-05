@@ -85,4 +85,4 @@ An Include block can import an external template.
 
 Evaluate blocks do not inject content into the rendered document directly. But they can be used to change variable values etc.
 
-* expression - A Javascript expression. It cannont contain any block types. Unlike an Interpolate block, the results of the expression of an Evaluate block are not rendered directly.
+* `expression` - A Javascript expression. It cannont contain any block types. Unlike an Interpolate block, the results of the expression of an Evaluate block are not rendered directly.
