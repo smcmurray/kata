@@ -21,7 +21,7 @@ Kata templates employ nine different types of blocks.
 * {{+ [Include block](#Include) +}}
 * {{! [Evaluate block](#Evaluate) !}}
 
-### <a name="Template"></a> Template block {{%[name]([argument [, argument...]]) body [%]}}
+### <a name="Template"></a> Template block {{%[name\]([argument [, argument...]]) body [%]}}
 
 All templates must be contained within a template block. Template blocks are converted to javascript functions. A template block has the following elements:
 
