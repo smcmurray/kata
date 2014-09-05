@@ -1,0 +1,96 @@
+start = template
+
+marker = "{{" / [%@<>\+\?]? "}}"
+
+content = sym:(!marker .)+ & {return sym.reduce(function(o,i){return o.concat(i)}, []).join('').replace(/\s+/,'')}
+  { return sym.reduce(function(o,i){return o.concat(i)}, []).join('') }
+
+output = sym:content {return 'out += "' + sym.replace(/[\r\n]/g, '\\n') + '";\n'}
+
+template =
+  ws* "{{%" name:identifier? sig:sig
+    body:block/extend* 
+  ws* "%"? "}}"
+  {return 'function *' + (name ? name : '') +sig +'{\n'
+        + ' var out = "";\n'
+        +   (body.length ? body.join('') : '')
+        + '}\n'}
+
+iterate =
+  ws* "{{@(" expr:parenthetical sig:sig
+    body:block* 
+  ws* "@"? "}}"
+  {return 'eval(' + expr.reduce(function(o,i){return o.concat(i)}, []).join('') + ').forEach(function' +sig + '{\n'
+    + (body.length ? body.join('') : '')
+    + '}\n'}
+
+include =
+  ws* "{{+" alias:identifier expr:parenthetical
+  ws* "+"? "}}"
+  {return 'var '+ alias + ' = require('+expr+');\n'}
+ 
+invoke =
+  ws* "{{>" target:identifier ws* (parenthetical/(parenthetical (ws* "," ws* parenthetical)*))
+    body:template*
+  ws* "<"? "}}"
+  {return '(function(){'
+    +'  var mixins = [];'
+    +'  var step, gen = '+ target +sig;
+
+    +'  body.forEach(function(f){'
+    +'    mixins.push(f);'
+    +'  });'
+
+    +'  do {'
+    +'    step = gen.next();'
+    +'    if (0 > mixins.indexOf(step.value)){'
+    +'      mixins[step.value]().next(true);'
+    +'    }'
+    +'  } while (! step.done);'
+    +'}());\n'}
+
+extend =
+  ws* "{{<" mixin:identifier
+  ws* ">"? "}}"
+  {return 'yield mixin;'}
+
+conditional =
+  ws* "{{?" expr:parenthetical
+    body: (block/else)*
+  ws* "?"? "}}"
+  {return 'if ('+expr+'){'
+    + body
+    + '}\n'
+  }
+
+else =
+  ws* "{{:" expr:parenthetical?
+    body:block*
+  ws* ":"? "}}"
+  {return '/*{ needed for parser generator */'
+    +'} else '+ (expr ? 'if ' + expr : '') + '{'
+    +'/* needed for parser generator}*/'
+    + body.join('');
+  }
+
+interpolate =
+  ws* "{{" expr:content "}}"
+  {return 'out += ' + expr + ';'}
+
+evaluate =
+  ws* "{{!" expr:content "!"? "}}"
+  {return expr + (expr.slice(-1) === ';' ? '' : ';')}
+
+block = template/iterate/invoke/include/output/conditional
+
+identifier =
+  ws* sym:[a-zA-Z_]+ ws* { return sym.join('') }
+
+ws = [ \n\r\t]
+
+sig =
+  "(" first:identifier? others:("," identifier)* ")"
+  {return '(' + (first ? [first].concat(others.map(function(e){return e[1]})) : []) + ')'}
+
+parenthetical =
+  ws* "(" (content/parenthetical)? ")"
