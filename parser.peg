@@ -11,10 +11,12 @@ template =
   ws* "{{%" name:identifier? sig:sig
     body:block/extend* 
   ws* "%"? "}}"
-  {return 'function *' + (name ? name : '') +sig +'{\n'
+  {var f ='function *' + (name ? name : '') +sig +'{\n'
         + ' var out = "";\n'
         +   (body.length ? body.join('') : '')
-        + '}\n'}
+        + '}\n';
+  f.kataname = name;
+  return f;}
 
 iterate =
   ws* "{{@(" expr:parenthetical sig:sig
@@ -34,25 +36,30 @@ invoke =
     body:template*
   ws* "<"? "}}"
   {return '(function(){'
-    +'  var mixins = [];'
-    +'  var step, gen = '+ target +sig;
+    +'  var mixins = {};'
+    +'  var gen = '+ target +sig + ', step=gen.next();'
 
     +'  body.forEach(function(f){'
-    +'    mixins.push(f);'
+    +'    mixins[f.kataname] = f;'
     +'  });'
 
-    +'  do {'
-    +'    step = gen.next();'
+    +'  while (!step.done){'
     +'    if (0 > mixins.indexOf(step.value)){'
-    +'      mixins[step.value]().next(true);'
+    +'        mixins[step.value]();'
+    +'        step = gen.throw(new Error('Extension not found'));'
     +'    }'
-    +'  } while (! step.done);'
+    +'    else step = gen.next();'
+    +'  }'
     +'}());\n'}
 
 extend =
   ws* "{{<" mixin:identifier
   ws* ">"? "}}"
-  {return 'yield mixin;'}
+  {return 'try {'
+    +'  yield mixin;'
+    +'} catch (){'
+    +   (body.length ? body.join('') : '')
+    +'}'
 
 conditional =
   ws* "{{?" expr:parenthetical
