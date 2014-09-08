@@ -127,7 +127,7 @@ else =
 
 interpolate =
   oT expr:content cT
-  {return 'out += ' + expr + ';'}
+  {return 'out += (' + expr + ').replace("\"", "\\\\\"", "g");'}
 
 evaluate =
   oT "!" expr:content "!"? cT

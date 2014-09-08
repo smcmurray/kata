@@ -131,7 +131,7 @@ module.exports = (function() {
             + body.join('');
             /* needed for parser generator }*/
           },
-        peg$c56 = function(expr) {return 'out += ' + expr + ';'},
+        peg$c56 = function(expr) {return 'out += (' + expr + ').replace("\"", "\\\\\"", "g");'},
         peg$c57 = "!",
         peg$c58 = { type: "literal", value: "!", description: "\"!\"" },
         peg$c59 = function(expr) {return expr},
