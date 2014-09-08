@@ -62,7 +62,7 @@ module.exports = (function() {
           },
         peg$c25 = function(sym) {return sym.replace(/\s+/,'')},
         peg$c26 = function(sym) { return sym },
-        peg$c27 = function(sym) {return 'out += "' + sym.replace(/[\r\n]/g, '\\n').replace('"', '\\"') + '";\n'},
+        peg$c27 = function(sym) {return 'out += "' + sym.replace(/[\r\n]/g, '\\n').replace('"', '\\"', 'g') + '";\n'},
         peg$c28 = function(c) { return c},
         peg$c29 = function(sym) { return sym.join('') },
         peg$c30 = /^[a-zA-Z_]/,
