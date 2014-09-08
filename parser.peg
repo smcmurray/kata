@@ -1,6 +1,12 @@
 start = template
 
-marker = "{{" / ([%@<>\+\?\:\!])? "}}"
+oT =
+  ws* (!"\\" "{{")
+
+cT =
+ (!"\\" "}}") ws*
+
+marker = oT / (([%@<>\+\?\:\!])? cT)
 
 content = sym:(!marker .)+ & {return sym.reduce(function(o,i){return o.concat(i)}, []).join('').replace(/\s+/,'')}
   { return sym.reduce(function(o,i){return o.concat(i)}, []).join('') }
@@ -8,9 +14,9 @@ content = sym:(!marker .)+ & {return sym.reduce(function(o,i){return o.concat(i)
 output = sym:content {return 'out += "' + sym.replace(/[\r\n]/g, '\\n') + '";\n'}
 
 template =
-  ws* "{{%" name:identifier? sig:sig
+  oT "%" ws* name:identifier? sig:sig
     body:(block/yield)* 
-  ws* "%"? "}}"
+  ws* "%"? cT
   {var f ='function *' + (name ? name : '') +sig +'{\n'
       + '  var out = "";'
       +    (body.length ? body.join('') : '')
@@ -20,23 +26,23 @@ template =
   }
 
 iterate =
-  ws* "{{@(" expr:parenthetical sig:sig
+  oT "@" expr:parenthetical sig:sig
     body:block* 
-  ws* "@"? "}}"
+  ws* "@"? cT
   {return 'eval(' + expr.reduce(function(o,i){return o.concat(i)}, []).join('') + ').forEach(function' +sig + '{\n'
     + (body.length ? body.join('') : '')
     + '}\n';
   }
 
 include =
-  ws* "{{+" alias:identifier expr:parenthetical
-  ws* "+"? "}}"
+  oT "+" alias:identifier expr:parenthetical
+  ws* "+"? cT
   {return 'var '+ alias + ' = require('+expr+');\n'}
  
 invoke =
-  ws* "{{>" target:(identifier ws* (parenthetical/("(" parenthetical (ws* "," ws* parenthetical)* ")" )))
+  oT ">" target:(identifier ws* (parenthetical/("(" parenthetical (ws* "," ws* parenthetical)* ")" )))
     body:template*
-  ws* "<"? "}}"
+  ws* "<"? cT
   {var ret = '(function(){'
     +'  var gen = ' + target + ', step=gen.next();'
     +'  var mixins = {';
@@ -59,9 +65,9 @@ invoke =
   }
 
 yield =
-  ws* "{{<" mixin:identifier
+  oT "<" mixin:identifier
     body:block*
-  ws* ">"? "}}"
+  ws* ">"? cT
   {return 'try {'
     +'  yield (' + mixin + ');'
     +'} catch (ex){'
@@ -70,18 +76,18 @@ yield =
   }
 
 conditional =
-  ws* "{{?" expr:parenthetical
+  oT "?" expr:parenthetical
     body:(block/else)*
-  ws* "?"? "}}"
+  ws* "?"? cT
   {return 'if ('+expr+'){'
     + body.join('')
     + '}\n'
   }
 
 else =
-  ws* "{{:" expr:parenthetical?
+  oT ":" expr:parenthetical?
     body:block*
-  ws* ":"? "}}"
+  ws* ":"? cT
   {return /*{ needed for parser generator */
     '} else '+ (expr ? 'if ' + expr : '') + '{'
     + body.join('');
@@ -89,14 +95,14 @@ else =
   }
 
 interpolate =
-  ws* "{{" expr:content "}}"
+  oT expr:content cT
   {return 'out += ' + expr + ';'}
 
 evaluate =
-  ws* "{{!" expr:content "!"? "}}"
+  oT "!" expr:content "!"? cT
   {return expr}
 
-block = template/iterate/invoke/include/output/conditional
+block = template/iterate/invoke/include/conditional/evaluate/interpolate/output
 
 identifier =
   ws* sym:[a-zA-Z_]+ ws* { return sym.join('') }
@@ -104,7 +110,7 @@ identifier =
 ws = [ \n\r\t]
 
 sig =
-  "(" first:identifier? others:("," identifier)* ")"
+  "(" first:identifier? others:(ws* "," identifier)* ")"
   {return '(' + (first ? [first].concat(others.map(function(e){return e[1]})) : []) + ')'}
 
 parenthetical =
