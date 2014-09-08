@@ -1,22 +1,53 @@
 start = template
 
+ws = sym:[ \n\r\t]* {sym.join('')}
+
 oT =
-  ws* (!"\\" "{{")
+  ws (!"\\" "{{")
 
 cT =
- (!"\\" "}}") ws*
+  (!"\\" "}}")
 
 marker = oT / (([%@<>\+\?\:\!])? cT)
 
-content = sym:(!marker .)+ & {return sym.reduce(function(o,i){return o.concat(i)}, []).join('').replace(/\s+/,'')}
-  { return sym.reduce(function(o,i){return o.concat(i)}, []).join('') }
+nM =
+  !marker sym:. {return sym}
+
+oP =
+  ws (!"\\" "(") { return "("}
+
+cP =
+  ws (!"\\" ")") {return ")"}
+
+nP =
+  sym:(!(oP/cP) .) {return sym[1]}
+
+any = /* Contains no markers.*/
+  sym:nM+
+  {var s = sym.join('');
+    console.log('any: ('+(typeof s)+')',s);
+    return s;
+  }
+
+content = sym:any & {return sym.replace(/\s+/,'')}
+  { return sym }
 
 output = sym:content {return 'out += "' + sym.replace(/[\r\n]/g, '\\n') + '";\n'}
 
+parenthetical =
+  ws sym:("(" (!marker c:(parenthetical/nP) { return c})* ")") { return sym.join('') }
+
+identifier =
+  ws sym:[a-zA-Z_]+ { return sym.join('') }
+
+sig =
+  "(" first:identifier? others:(ws "," identifier)* ")"
+  {return '(' + (first ? [first].concat(others.map(function(e){return e[1]})) : []) + ')'}
+
 template =
-  oT "%" ws* name:identifier? sig:sig
+  oT "%" ws name:identifier? sig:sig
     body:(block/yield)* 
-  ws* "%"? cT
+  ws "%"? cT ws
   {var f ='function *' + (name ? name : '') +sig +'{\n'
       + '  var out = "";'
       +    (body.length ? body.join('') : '')
@@ -28,7 +59,7 @@ template =
 iterate =
   oT "@" expr:parenthetical sig:sig
     body:block* 
-  ws* "@"? cT
+  ws "@"? cT
   {return 'eval(' + expr.reduce(function(o,i){return o.concat(i)}, []).join('') + ').forEach(function' +sig + '{\n'
     + (body.length ? body.join('') : '')
     + '}\n';
@@ -36,13 +67,13 @@ iterate =
 
 include =
   oT "+" alias:identifier expr:parenthetical
-  ws* "+"? cT
+  ws "+"? cT
   {return 'var '+ alias + ' = require('+expr+');\n'}
  
 invoke =
-  oT ">" target:(identifier ws* (parenthetical/("(" parenthetical (ws* "," ws* parenthetical)* ")" )))
+  oT ">" target:(identifier ws (parenthetical/("(" parenthetical (ws "," ws parenthetical)* ")" )))
     body:template*
-  ws* "<"? cT
+  ws "<"? cT
   {var ret = '(function(){'
     +'  var gen = ' + target + ', step=gen.next();'
     +'  var mixins = {';
@@ -67,7 +98,7 @@ invoke =
 yield =
   oT "<" mixin:identifier
     body:block*
-  ws* ">"? cT
+  ws ">"? cT
   {return 'try {'
     +'  yield (' + mixin + ');'
     +'} catch (ex){'
@@ -78,7 +109,7 @@ yield =
 conditional =
   oT "?" expr:parenthetical
     body:(block/else)*
-  ws* "?"? cT
+  ws "?"? cT
   {return 'if ('+expr+'){'
     + body.join('')
     + '}\n'
@@ -87,7 +118,7 @@ conditional =
 else =
   oT ":" expr:parenthetical?
     body:block*
-  ws* ":"? cT
+  ws ":"? cT
   {return /*{ needed for parser generator */
     '} else '+ (expr ? 'if ' + expr : '') + '{'
     + body.join('');
@@ -103,15 +134,3 @@ evaluate =
   {return expr}
 
 block = template/iterate/invoke/include/conditional/evaluate/interpolate/output
-
-identifier =
-  ws* sym:[a-zA-Z_]+ ws* { return sym.join('') }
-
-ws = [ \n\r\t]
-
-sig =
-  "(" first:identifier? others:(ws* "," identifier)* ")"
-  {return '(' + (first ? [first].concat(others.map(function(e){return e[1]})) : []) + ')'}
-
-parenthetical =
-  ws* "(" (content/parenthetical)? ")"
