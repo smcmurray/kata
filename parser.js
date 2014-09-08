@@ -60,9 +60,9 @@ module.exports = (function() {
             console.log('any: ('+(typeof s)+')',s);
             return s;
           },
-        peg$c25 = function(sym) {console.log('content: '+sym); return sym.replace(/\s+/,'')},
+        peg$c25 = function(sym) {return sym.replace(/\s+/,'')},
         peg$c26 = function(sym) { return sym },
-        peg$c27 = function(sym) {console.log('output: ' + sym); return 'out += "' + sym.replace(/[\r\n]/g, '\\n') + '";\n'},
+        peg$c27 = function(sym) {return 'out += "' + sym.replace(/[\r\n]/g, '\\n').replace('"', '\\"') + '";\n'},
         peg$c28 = function(c) { return c},
         peg$c29 = function(sym) { return sym.join('') },
         peg$c30 = /^[a-zA-Z_]/,

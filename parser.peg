@@ -32,7 +32,7 @@ any = /* Contains no markers.*/
 content = sym:any & {return sym.replace(/\s+/,'')}
   { return sym }
 
-output = sym:content {return 'out += "' + sym.replace(/[\r\n]/g, '\\n') + '";\n'}
+output = sym:content {return 'out += "' + sym.replace(/[\r\n]/g, '\\n').replace('"', '\\"') + '";\n'}
 
 parenthetical =
   ws sym:("(" (!marker c:(parenthetical/nP) { return c})* ")") { return sym.join('') }
