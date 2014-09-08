@@ -1,6 +1,6 @@
 {
   "name": "kata",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Template Engine for Javascript",
   "main": "index.js",
   "scripts": {
