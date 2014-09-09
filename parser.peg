@@ -32,10 +32,10 @@ any = /* Contains no markers.*/
 content = sym:any & {return sym.replace(/\s+/,'')}
   { return sym }
 
-output = sym:content {return 'out += "' + sym.replace(/[\r\n]/g, '\\n').replace('"', '\\"', 'g') + '";\n'}
+output = sym:content {return 'out += "' + sym.replace(/[\r\n]/g, '\\n').replace(/"/g, '\\"') + '";\n'}
 
 parenthetical =
-  ws sym:("(" (!marker c:(parenthetical/nP) { return c})* ")") { return sym.join('') }
+  ws ("(" sym:(!marker c:(parenthetical/nP) { return c})* ")") { return '(' + sym.join('') + ')' }
 
 identifier =
   ws sym:[a-zA-Z_]+ { return sym.join('') }
@@ -60,7 +60,7 @@ iterate =
   oT "@" expr:parenthetical sig:sig
     body:block* 
   ws "@"? cT
-  {return 'eval(' + expr.reduce(function(o,i){return o.concat(i)}, []).join('') + ').forEach(function' +sig + '{\n'
+  {return expr + '.forEach(function' +sig + '{\n'
     + (body.length ? body.join('') : '')
     + '}\n';
   }
@@ -108,14 +108,15 @@ yield =
 
 conditional =
   oT "?" expr:parenthetical
-    body:(block/else)*
+    body:(elseif/block)*
   ws "?"? cT
-  {return 'if ('+expr+'){'
+  {return 'if '+expr+'{'
+    + (body.length ? '\n' : '')
     + body.join('')
     + '}\n'
   }
 
-else =
+elseif =
   oT ":" expr:parenthetical?
     body:block*
   ws ":"? cT
@@ -127,7 +128,7 @@ else =
 
 interpolate =
   oT expr:content cT
-  {return 'out += (' + expr + ').replace("\"", "\\\\\"", "g");'}
+  {return 'out += (' + expr + ').replace(/"/g, \'\\"\');'}
 
 evaluate =
   oT "!" expr:content "!"? cT
