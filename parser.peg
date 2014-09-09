@@ -24,10 +24,7 @@ nP =
 
 any = /* Contains no markers.*/
   sym:nM+
-  {var s = sym.join('');
-    console.log('any: ('+(typeof s)+')',s);
-    return s;
-  }
+  {return sym.join(''); }
 
 content = sym:any & {return sym.replace(/\s+/,'')}
   { return sym }

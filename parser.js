@@ -56,10 +56,7 @@ module.exports = (function() {
         peg$c21 = { type: "literal", value: ")", description: "\")\"" },
         peg$c22 = function() {return ")"},
         peg$c23 = function(sym) {return sym[1]},
-        peg$c24 = function(sym) {var s = sym.join('');
-            console.log('any: ('+(typeof s)+')',s);
-            return s;
-          },
+        peg$c24 = function(sym) {return sym.join(''); },
         peg$c25 = function(sym) {return sym.replace(/\s+/,'')},
         peg$c26 = function(sym) { return sym },
         peg$c27 = function(sym) {return 'out += "' + sym.replace(/[\r\n]/g, '\\n').replace(/"/g, '\\"') + '";\n'},
