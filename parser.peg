@@ -66,19 +66,21 @@ iterate =
 include =
   oT "+" alias:identifier expr:parenthetical
   ws "+"? cT
-  {return 'var '+ alias + ' = require('+expr+');\n'}
+  {return 'var '+ alias + '; if (typeof require === "function"){'
+    + alias +' = require('+expr+');'
+    + '} else throw new Error("Unable to include template. Please provide a module loader.");\n'}
  
 invoke =
   oT ">" target:identifier ws sig:parenthetical
     body:template*
   ws "<"? cT
-  {var ret = 'out += ' + target + '.bind({'
+  {return 'out += ' + target + '.bind({'
     + body.reduce(function(o,f){
         if (! f.kataname) return o;
         o.push(f.kataname + ': ' + f);
         return o;
-      }, []). join(',');
-    + '})' + sig + '\n';
+      }, []). join(',')
+    + '})' + sig + ';\n';
   }
 
 yield =
@@ -103,8 +105,8 @@ elseif =
   oT ":" expr:parenthetical?
     body:block*
   ws ":"? cT
-  {return /*{ needed for parser generator */
-    '} else '+ (expr ? 'if ' + expr : '') + '{'
+  {/*{ needed for parser generator */
+    return '} else '+ (expr ? 'if ' + expr : '') + '{'
     + body.join('');
     /* needed for parser generator }*/
   }

@@ -33,10 +33,10 @@
         }
         return "(function(name, definition){"
           + "'use strict';"
-          + "if (typeof module != 'undefined') module.exports = definition();"
+          + "if (typeof module != 'undefined') module.exports = definition(require);"
           + "else if (typeof define == 'function' && typeof define.amd == 'object') define(definition);"
           + "else this[name] = definition();"
-          + "}('root'," + res + "));"
+          + "}('root', function(require){ return " + res + "}));"
       }
     }
   });
