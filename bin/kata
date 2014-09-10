@@ -1,21 +1,22 @@
 #!/usr/bin/env node
 
 (function(){
-	'use strict';
+  'use strict';
 
-	var fs = require('fs');
-	var kata = require('../index');
+  var fs = require('fs');
+  var kata = require('../index');
 
-	if (process.argv[2]){
-		fs.readFile(process.argv[2], {encoding: 'utf8'}, function(err, src){
-			if (err) {
+  if (process.argv[2]){
+    fs.readFile(process.argv[2], {encoding: 'utf8'}, function(err, src){
+      var template;
+      if (err) {
         throw new Error(err);
         console.error('Error reading template file');
       }
-			console.log(kata.compile(src));
-		})
-	}
+      console.log(kata.compile(src));
+    })
+  }
   else {
-    console.error('help: cli filename');
+    console.error('help: kata srcfile > compiledfile');
   }
 }())
