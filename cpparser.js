@@ -18,7 +18,7 @@
     pos += match.pos;
     str = str.substr(match.pos);
 
-    return '» function ' + (name ? name : '') + args + "{var out='';«" + str + "»}«";
+    return '»function ' + (name ? name : '') + args + "{var out='';«" + str + "»}«";
   };
 
   blk['='] = function(str){
@@ -134,9 +134,18 @@
     throw new Error('Parenthetical missing )');
   }
 
-  module.exports = function(str){
+  module.exports = function(str, options){
+    var defaults = {
+      src: true
+    };
+
+    Object.keys(defaults).forEach(function(k){
+      options[k] = options[k] || defaults[k];
+    });
 
     var fn, match, re=/\{\{([%@\?:\+><!]?)((?:(?!\{\{)[\s\S])*?)([%@\?:\+><!]?)\}\}/;
+
+    str = str.replace(/\r|\n/g, '\\n');
 
     while (match = re.exec(str)) {
       var sym = match[1] || '=';
@@ -161,10 +170,11 @@
       }
     }
 
-    fn = /*new Function(*/str.replace(/«([\s\S]*?)»/g, function(m, o){
-      return "out += '" + o.replace(/\\'/g, '\\$&').replace(/'/g, '\\$&').replace(/\r|\n/g, '\\n') + "';"
-    }).replace(/«|»/g, '');// + ".apply(arguments);");
+    fn = str.replace(/«([\s\S]*?)»/g, function(m, o){
+      return "out += '" + o.replace(/\\'/g, '\\$&').replace(/'/g, '\\$&') + "';"
+    }).slice(1,-1);
 
-    return (new Function('return '+fn))();
+    if (options.src) return fn;
+    else return (new Function('return '+fn))();
   }
 }());
