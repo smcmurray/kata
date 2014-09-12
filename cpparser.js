@@ -138,15 +138,16 @@
     var defaults = {
       src: true
     };
-
-    Object.keys(defaults).forEach(function(k){
-      options[k] = options[k] || defaults[k];
-    });
+    if (options){
+      Object.keys(defaults).forEach(function(k){
+        options[k] = options.hasOwnProperty(k) ? options[k] : defaults[k];
+      });
+    }
+    else options = options || defaults;
 
     var fn, match, re=/\{\{([%@\?:\+><!]?)((?:(?!\{\{)[\s\S])*?)([%@\?:\+><!]?)\}\}/;
 
     str = str.replace(/\r|\n/g, '\\n');
-
     while (match = re.exec(str)) {
       var sym = match[1] || '=';
       var spos = match.index;
@@ -157,19 +158,13 @@
         throw new Error('{{'+match[1] + ' at ' +(spos+2) + " doesn't match " + match[3] + '}} at ' +(epos-2));
       }
 
-      if (blk.hasOwnProperty(sym)){
-        try {
-          str = str.substr(0, spos) + blk[sym](match[2]) + str.substr(epos);
-        }
-        catch (ex){
-          throw new Error(ex + ' in ' + sym + 'block between position ' + spos + ' and position ' +epos);
-        }
+      try {
+        str = str.substr(0, spos) + blk[sym](match[2]) + str.substr(epos);
       }
-      else {
-        str = str.substr(0, spos) + "»" + sym +' ' + match[2] + ' ' + sym + "«" + str.substr(epos);
+      catch (ex){
+        throw new Error(ex + ' in ' + sym + 'block between position ' + spos + ' and position ' +epos);
       }
     }
-
     fn = str.replace(/«([\s\S]*?)»/g, function(m, o){
       return "out += '" + o.replace(/\\'/g, '\\$&').replace(/'/g, '\\$&') + "';"
     }).slice(1,-1);
