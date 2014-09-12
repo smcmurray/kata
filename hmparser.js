@@ -60,7 +60,6 @@
       }
       /* Look for other blocks */
       else if (match = wrap(block, str, pos)){
-  console.log('Template body: '+match.value);
         body.push(match.value);
         pos += match.pos;
         str = str.substr(match.pos);
@@ -95,7 +94,7 @@
 
     return {
         pos: pos + match.pos
-      , value: 'out += ' + expr + ';'
+      , value: 'out += (' + expr + ").replace(/\"/g, '\\\"');"
     };
   };
 
@@ -111,7 +110,7 @@
     if (!(match = wrap(parenthetical, str, pos))) throw genError('Iterate block missing (expression)', pos);
     pos += match.pos;
     str = str.substr(match.pos);
-    expr = match,match;
+    expr = match.value;
 
     /* check for (args) */
     re = /^\s*(\(\s*\w+(?:\s*,\s*\w+)*\))/g;
@@ -135,7 +134,7 @@
     if (! match) throw genError('Iterate block missing }}', pos);
     return {
         pos: pos
-      , value: expr+'.forEach(function' + sig + '{'
+      , value: '('+expr+').forEach(function' + sig + '{'
          + (body.length ? '\n' : '')
          + body.join('\n')
          + (body.length ? '\n' : '')
@@ -338,7 +337,7 @@
     str = str.substr(re.lastIndex);
 
     re = /^\s*(\w+)/g;
-    if (!(match = re.exec(str))) {console.log('Import missing alias: ' + str.substr(0,20)); throw genError('Import block missing template alias', pos);}
+    if (!(match = re.exec(str))) throw genError('Import block missing template alias', pos);
     pos += re.lastIndex;
     str = str.substr(re.lastIndex);
     alias = match[1];
@@ -377,50 +376,39 @@
   };
 
   function parenthetical(str){
-    var match, re=/^\s*\(/g;
-    var pos, expr;
-
+    var match, re = /^\s*\(/g;
+    var pos=0, expr;
+    
     if (!(match=re.exec(str))) return;
-    pos = re.lastIndex;
+    pos += re.lastIndex;
     str = str.substr(re.lastIndex);
     expr = '(';
 
-    while (match){
-      /* check for ) */
-      re = /^\s*\)/g;
-      if (match = re.exec(str)){
-        pos += re.lastIndex;
-        expr += ')';
-        break;
+    re = /^((?:(?!{{|}}).)*?)(\(|\))/g;
+    while (match = re.exec(str)){
+      if (')' === match[2]){
+        return {
+            pos: pos+re.lastIndex
+          , value: expr + match[0]
+        };
       }
-      /* check for () */
-      else if (match = wrap(parenthetical, str, pos)){
-        pos += match.pos;
-        str = str.substr(match.pos);
-        expr += match.match;
-      }
-      /* check for {{ or }}*/
-      else if (/^\s*(?:\{\{|[%@\?:><\+!]?\}\})/.test(str)) throw genError('Parenthetical expression missing )', pos);
-      /* advance to the next non-space */
       else {
-        re = /^\s*\S/g;
-        if (match = re.exec(str)){
-          pos += re.lastIndex;
-          str = str.substr(re.lastIndex);
-          expr += match[0];
+        expr += match[1];
+        pos += re.lastIndex-1;
+        str = str.substr(re.lastIndex-1);
+        if (match = wrap(parenthetical, str. pos)){
+          expr += match.value;
+          pos += match.pos;
+          str = str.substr(match.pos);
         }
       }
     }
-    if (!match) throw genError('Parenthetical expression missing )', pos);
-    return {
-        pos: pos
-      , value: expr
-    };
+    throw genError('Parenthetical missing )', pos);
   }
 
   function other(str){
     var match, re = /\{\{|[%@\?><\+!]?\}\}/g;
-    var pos = 0, expr;
+    var pos = 0;
 
     if (!(match = re.exec(str))) throw genError('Block missing }}', pos);
     if (! match.index) return;
@@ -436,7 +424,7 @@
     if (match && /\S/.test(match.value)){
       return {
         pos: match.pos
-        , value: 'out =+ "'
+        , value: 'out += "'
                 + match.value.replace(/\r|\n/g, '\\n').replace(/"/g, '\\"')
                 + '";'
       }
