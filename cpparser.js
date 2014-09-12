@@ -137,6 +137,7 @@
   module.exports = function(str, options){
     var defaults = {
       src: true
+      , plugins: {}
     };
     if (options){
       Object.keys(defaults).forEach(function(k){
@@ -145,7 +146,14 @@
     }
     else options = options || defaults;
 
-    var fn, match, re=/\{\{([%@\?:\+><!]?)((?:(?!\{\{)[\s\S])*?)([%@\?:\+><!]?)\}\}/;
+    blk['#'] = function(str){
+      var match, re=/^\w+/;
+
+      if (!match=re.exec(str)) return str;
+      if (options.plugins[match[0]]) return options.plugins[match[0]](str.substr(re.lastIndex));
+    };
+
+    var fn, match, re=/\{\{([%@\?:\+><!#]?)((?:(?!\{\{)[\s\S])*?)([%@\?:\+><!#]?)\}\}/;
 
     str = str.replace(/\r|\n/g, '\\n');
     while (match = re.exec(str)) {
