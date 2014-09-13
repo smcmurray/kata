@@ -84,11 +84,11 @@
   blk['>'] = function(str){
     var match, target, args, re=/^\s*(\w+)/g;
 
-    if (!match=re.exec(str)) throw new Error('Invoke block missing template name');
+    if (!(match=re.exec(str))) throw new Error('Invoke block missing template name');
     target = match[1];
     str = str.substr(re.lastIndex);
 
-    if (!match = parenthetical(str)) throw new Error('Invoke block missing ()');
+    if (!(match = parenthetical(str))) throw new Error('Invoke block missing ()');
     args = match.value;
     str = str.substr(match.pos);
 
@@ -98,11 +98,11 @@
   blk['<'] = function(str){
     var match, target, args, re=/^\s*(\w+)/g;
 
-    if (!match=re.exec(str)) throw new Error('Yield block missing template name');
+    if (!(match=re.exec(str))) throw new Error('Yield block missing template name');
     target = match[1];
     str = str.substr(re.lastIndex);
 
-    if (!match = parenthetical(str)) throw new Error('Yield block missing ()');
+    if (!(match = parenthetical(str))) throw new Error('Yield block missing ()');
     args = match.value;
     str = str.substr(match.pos);
 
@@ -159,7 +159,7 @@
     blk['#'] = function(str){
       var match, re=/^\w+/;
 
-      if (!match=re.exec(str)) return str;
+      if (!(match=re.exec(str))) return str;
       if (options.plugins[match[0]]) return options.plugins[match[0]](str.substr(re.lastIndex));
     };
 

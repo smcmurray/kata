@@ -4,7 +4,7 @@
   'use strict';
 
   var fs = require('fs');
-  var kata = require('../index');
+  var kata = require('../kata.min');
 
   if (process.argv[2]){
     fs.readFile(process.argv[2], {encoding: 'utf8'}, function(err, src){
