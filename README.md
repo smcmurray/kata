@@ -37,6 +37,7 @@ Kata templates employ nine different types of blocks.
 * {{< [Yield block](#Yield) >}}
 * {{+ [Include block](#Include) +}}
 * {{! [Evaluate block](#Evaluate) !}}
+* {{# [Plugin block](#Plugin) #}}
 
 ### <a name="Template"></a> Template block {{%[name\]([argument [, argument...]]) body [%]}}
 
@@ -103,3 +104,10 @@ An Include block can import an external template.
 Evaluate blocks do not inject content into the rendered document directly. But they can be used to change variable values etc.
 
 * `expression` - A Javascript expression. It cannont contain any block types. Unlike an Interpolate block, the results of the expression of an Evaluate block are not rendered directly.
+
+### <a name="Plugin"></a> Plugin block {{#name body[#]}}
+
+Plugin blocks are ways to extend Kata functionality. You can define a plugin and include it as an option to kata().
+
+* `name` - The name of the plugin as provided in options
+* `body` - The body of the block, as specified by the plugin.
