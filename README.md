@@ -3,6 +3,12 @@ Kata
 
 Javascript JSON templating engine
 
+## Install
+
+````
+$ npm install kata
+````
+
 ## API
 
 ````js
@@ -13,7 +19,7 @@ fs.readFile('template.kata', {encoding: 'utf8'}, function(err, src){
   var template;
   if (err) return;
 
-  template = kata.compile(src);
+  template = kata(src);
   console.log(template({greeting: 'Hello', name: 'World'}));
 });
 ````

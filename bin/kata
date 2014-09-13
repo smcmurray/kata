@@ -13,7 +13,7 @@
         throw new Error(err);
         console.error('Error reading template file');
       }
-      console.log(kata.compile(src));
+      console.log(kata(src, {src: true}));
     })
   }
   else {

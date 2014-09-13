@@ -1,4 +1,14 @@
-(function(){
+(function(name, definition){
+  'use strict';
+
+  if (typeof module != 'undefined') {
+    module.exports = definition();
+  }
+  else if (typeof define == 'function' && typeof define.amd == 'object') {
+    define(definition());
+  }
+  else this[name] = definition();
+}('kata', function(){
   'use strict';
 
   var blk = {};
@@ -134,9 +144,9 @@
     throw new Error('Parenthetical missing )');
   }
 
-  module.exports = function(str, options){
+  return function(str, options){
     var defaults = {
-      src: true
+      src: false
       , plugins: {}
     };
     if (options){
@@ -177,7 +187,19 @@
       return "out += '" + o.replace(/\\'/g, '\\$&').replace(/'/g, '\\$&') + "';"
     }).slice(1,-1);
 
-    if (options.src) return fn;
+    if (options.src) {
+      return "(function(name, definition){"
+      +"  'use strict';"
+
+      +"  if (typeof module != 'undefined') {"
+      +"    module.exports = definition(require);"
+      +"  }"
+      +"  else if (typeof define == 'function' && typeof define.amd == 'object') {"
+      +"    define(definition);"
+      +"  }"
+      +"  else this[name] = definition();"
+      +"}('template', function(require){ return " + fn + "}))";
+    }
     else return (new Function('return '+fn))();
   }
-}());
+}));
