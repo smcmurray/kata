@@ -1,6 +1,4 @@
 (function(name, definition){
-  'use strict';
-
   if (typeof module != 'undefined') {
     module.exports = definition();
   }
