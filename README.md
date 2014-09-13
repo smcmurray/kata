@@ -26,7 +26,7 @@ fs.readFile('template.kata', {encoding: 'utf8'}, function(err, src){
 
 ## Template Syntax
 
-Kata templates employ nine different types of blocks.
+Kata templates employ ten different types of blocks.
 
 * {{% [Template block](#Template) %}}
 * {{ [Interpolate block](#Interpolate) }}
