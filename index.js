@@ -108,7 +108,7 @@
   };
 
   blk['!'] = function(str){
-    return '»' + str + '<<';
+    return '»' + str + '«';
   };
 
   function parenthetical(str){
