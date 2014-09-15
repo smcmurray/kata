@@ -12,20 +12,31 @@
   var Block = Object.create(Object.prototype, {
     parse: {
       value: function(str){
+        if (this.parsed) throw new Error('Attempting to reparse ' + this.symbol + ' block');
         if (str && /\S/.test(str))
-          this.addChild('c').parse(str);
+          this.addChild('c').parse(str).render();
         this.parsed = true;
       }
     }
     , end: {value: null, writable: true}
-    , children: {value: [], writable: true}
     , addChild: {
       value: function(symbol, start){
-        var n = this.children.push(Object.create(blk[symbol||'='], {
-          start: {value: start}
+        symbol = symbol || '=';
+        if (! blk[symbol]) throw new Error('Unknown block type: '+symbol);
+        if (! this.children) this.children = [];
+        var n = this.children.push(Object.create(blk[symbol], {
+          start: {value: start || 0}
         }));
-        console.log('Added child ', symbol);
         return this.children[n-1];
+      }
+    }
+    , render: {
+      value: function(){
+        if (this.children) {
+          return this.children.reduce(function(o,b){
+            return o+b.rendered;
+          }, '');
+        }
       }
     }
   });
@@ -34,8 +45,15 @@
     parsed: { value: true }
     , addChild: {
       value: function(sym, start){
+        if (this.children) throw new Error('Unexpected content after template definition');
         if ('%' != sym) throw new Error('Expected Template block. Templates must begin with {{%');
-        Block.addChild.call(this, sym, start);
+        return Block.addChild.call(this, sym, start);
+      }
+    }
+    , render: {
+      value: function(){
+        if (! this.children) throw new Error('No template defined');
+        return this.children[0].rendered;
       }
     }
   });
@@ -63,12 +81,13 @@
     }
     , render: {
       value: function(){
-        return 'function ' + (this.name ? this.name : '') + this.args + "{"
-          + "var out='';"
-          + this.children.reduce(function(o,b){
-            return o+b.render();
-          }, '')
-          + "}";
+        if (! this.rendered){
+          this.rendered = 'function ' + (this.name ? this.name : '') + this.args + "{"
+            + "var out='';"
+            + Block.render.call(this)
+            + "}";
+        }
+        return this.rendered;
       }
     }
     , addChild: {
@@ -80,7 +99,8 @@
   });
 
   blk['='] = Object.create(Block, {
-    parse: {
+    symbol: {value: '='}
+    , parse: {
       value: function(str){
         this.expr = str.replace(/"/g, '\\"').replace(/\r|\n/g, '\\n');
         Block.parse.call(this);
@@ -89,7 +109,10 @@
     }
     , render: {
       value: function(){
-        return 'out += ' + this.expr + ';';
+        if (! this.rendered){
+          this.rendered = 'out += ' + this.expr + ';';
+        }
+        return this.rendered;
       }
     }
     , addChild: {
@@ -100,7 +123,8 @@
   });
 
   blk['@'] = Object.create(Block, {
-    parse: {
+    symbol: {value: '@'}
+    , parse: {
       value: function(str){
         var match;
         if (!(match = parenthetical(str))) throw new Error('Iterate block missing iterable');
@@ -112,12 +136,15 @@
         return this;
       }
     }
-    , render: function(){
-      return this.iter+'.forEach(function'+this.args+'{'
-        + this.children.reduce(function(o,b){
-          return o+b.render();
-        }, '')
-        + '});';
+    , render: {
+      value: function(){
+        if (! this.rendered){
+          this.rendered = this.iter+'.forEach(function'+this.args+'{'
+            + Block.render.call(this)
+            + '});';
+        }
+        return this.rendered;
+      }
     }
     , addChild: {
       value: function(sym, start){
@@ -128,7 +155,8 @@
   });
 
   blk['?'] = Object.create(Block, {
-    parse: {
+    symbol: {value: '?'}
+    , parse: {
       value: function(str){
         var match;
         if (!(match = parenthetical(str))) throw new Error('Condition block missing condition');
@@ -137,17 +165,21 @@
         return this;
       }
     }
-    , render: function(){
-      return 'if '+this.cond+'{'
-        + this.children.reduce(function(o,b){
-          return o+b.render();
-        }, '')
-        + '}';
+    , render: {
+      value: function(){
+        if (! this.rendered){
+          this.rendered = 'if '+this.cond+'{'
+            + Block.render.call(this)
+            + '}';
+        }
+        return this.rendered;
+      }
     }
   });
 
   blk[':'] = Object.create(Block, {
-    parse: {
+    symbol: {value: ':'}
+    , parse: {
       value: function(str){
         var match;
         if (match = parenthetical(str)){
@@ -160,20 +192,22 @@
     }
     , render: {
       value: function(){
-        return '} else '+(this.cond ? 'if '+this.cond : '') + '{'
-        + this.children.reduce(function(o,b){
-          return o+b.render();
-        }, '');
+        if (!this.rendered){
+          this.rendered = '} else '+(this.cond ? 'if '+this.cond : '') + '{'
+          + Block.render.call(this)
+        }
+        return this.rendered;
       }
     }
   });
 
   blk['+'] = Object.create(Block, {
-    parse: {
+    symbol: {value: '+'}
+    , parse: {
       value: function(str){
         var match, re=/^\s*(\w+)/g;
         if (!(match = re.exec(str))) throw new Error('Import block missing alias');
-        this.alias = match.value;
+        this.alias = match[1];
         str = str.substr(re.lastIndex);
         if (!(match=parenthetical(str))) throw new Error('Import block missing template location');
         this.location = match.value;
@@ -185,7 +219,10 @@
     }
     , render: {
       value: function(){
-        return 'var ' + this.alias + ' = require' + this.location + ';';
+        if (!this.rendered){
+          this.rendered = 'var ' + this.alias + ' = require' + this.location + ';';
+        }
+        return this.rendered;
       }
     }
     , addChild: {
@@ -194,7 +231,8 @@
   });
 
   blk['>'] = Object.create(Block, {
-    parse: {
+    symbol: {value: '<'}
+    , parse: {
       value: function(str){
         var match, re=/^\s*(\w+)/g;
         if (!(match=re.exec(str))) throw new Error('Invoke block missing template name');
@@ -212,23 +250,25 @@
     }
     , render: {
       value: function(){
-        return 'out+=(function(){'
-          + this.children.reduce(function(o,b){
-              return o+b.render();
-            }, '')
-          + this.signature + ';}());';
+        if (!this.rendered){
+          this.rendered = 'out+=(function(){'
+            + Block.render.call(this)
+            + this.signature + ';}());';
+        }
+        return this.rendered;
       }
     }
     , addChild: {
       value: function(sym, start){
         if ('%' != sym) throw new Error('Invoke blocks can only contain Template blocks,');
-        Block.addChild.call(this, sym, start);
+        return Block.addChild.call(this, sym, start);
       }
     }
   });
 
   blk['<'] = Object.create(Block, {
-    parse: {
+    symbol: {value: '>'}
+    , parse: {
       value: function(str){
         var match, re=/^\s*(\w+)/g;
         if (!(match=re.exec(str))) throw new Error('Yield block missing template name');
@@ -244,17 +284,19 @@
     }
     , render: {
       value: function(){
-        return 'if (typeof '+target+' ==="function") out+='+this.target + this.args + '; else {'
-        + this.childdren.reduce(function(o,b){
-            return o+b.render();
-          }, '')
-        + '}';
+        if (! this.rendered){
+          this.rendered = 'if (typeof '+target+' ==="function") out+='+this.target + this.args + '; else {'
+          + Block.render.call(this)
+          + '}';
+        }
+        return this.rendered;
       }
     }
   });
 
   blk['!'] = Object.create(Block, {
-    parse: {
+    symbol: {value: '!'}
+    , parse: {
       value: function(str){
         this.expr = str;
         Block.parse.call(this);
@@ -263,7 +305,10 @@
     }
     , render: {
       value: function(){
-        return this.expr;
+        if (! this.rendered){
+          this.rendered = this.expr;
+        }
+        return this.rendered;
       }
     }
     , addChild: {
@@ -274,16 +319,21 @@
   });
 
   blk['c'] = Object.create(Block, {
-    parse: {
+    symbol: {value: 'c'}
+    , parse: {
       value: function(str){
         this.expr = str.replace(/"/g, '\\"').replace(/\r|\n/g, '\\n');
         Block.parse.call(this);
+        this.end = this.start + str.length;
         return this;
       }
     }
     , render: {
       value: function(){
-        return 'out+="' + this.expr + '";';
+        if (! this.rendered){
+          this.rendered = 'out+="' + this.expr + '";';
+        }
+        return this.rendered;
       }
     }
   });
@@ -313,20 +363,30 @@
     var q = [root], tmp;
     var match, re=/((?:(?!\{\{[%@\?:\+><!]?|[%@\?:\+><!]?\}\})[\s\S])*)(\{\{[%@\?:\+><!]?|[%@\?:\+><!]?\}\})/g;
 
+    var defaults = {
+      src: false
+      , plugins: {}
+    };
+    if (options){
+      Object.keys(defaults).forEach(function(k){
+        options[k] = options.hasOwnProperty(k) ? options[k] : defaults[k];
+      });
+    }
+    else options = options || defaults;
+
     while(q.length && (match = re.exec(str))){
       //Everything between the last match and now is content
       //Or could be block signature + content
       if (match[1] && match[1].length){
-        console.error('Cur: ', cur);
         if (cur.parsed){ // This block has already been parsed. So match[1] must be content.
-          cur.addChild('c', match.index).parse(match[1]);
+          cur.addChild('c', match.index).parse(match[1]).render();
         }
         else {
           cur.parse(match[1]);
         }
       }
       if ('{{' === match[2].substr(0,2)){
-        q.push(cur.addChild(match[2].substr(2) || '=', re.lastIndex-match[2].length));
+        q.push(cur.addChild(match[2].substr(2), re.lastIndex-match[2].length));
       }
       else if (cur.symbol === 'root') {
         throw new Error('Expecting {{% but found ' + match[2] + ' at position ' + (re.lastIndex-match[2].length));
@@ -335,21 +395,31 @@
         /* This must be a }}
         /* Make sure start and end symbols match */
         sym = (3 === match[2].length ? match[2].substr(0,1) : this.symbol);
-        if (sym && sym != cur.symbol) throw new Error('{{'+cur.symbol+' at position ' + cur.s + ' does not match ' + sym +'}} at position '+re.lastIndex-3);
+        if (sym && sym != cur.symbol) throw new Error('{{'+cur.symbol+' at position ' + cur.start + ' does not match ' + sym +'}} at position '+(re.lastIndex-3));
         cur.e = re.lastIndex;
+        cur.render();
         q.pop();
       }
       cur = q[q.length-1];
     }
     if (cur !== root){
-      console.log('Root: ', root);
       throw new Error('Failed to find end of {{' + cur.sym + ' block begun at position ' + cur.s
       + '\nq has '+q.length + ' items');
     }
-    root.e = root.blocks[root.blocks.length-1].e
-    tmp = str.substr(root.e);
-    if (tmp && /\S/.test(tmp)) throw new Error('Unexpected content after template at position ' + root.e);
 
-    return root.blocks.reduce(function(o,b){return o+b.value}, '');
+    if (options.src) {
+      return "(function(name, definition){"
+      +"  'use strict';"
+
+      +"  if (typeof module != 'undefined') {"
+      +"    module.exports = definition(require);"
+      +"  }"
+      +"  else if (typeof define == 'function' && typeof define.amd == 'object') {"
+      +"    define(definition);"
+      +"  }"
+      +"  else this[name] = definition();"
+      +"}('template', function(require){ return " + root.render() + "}))";
+    }
+    else return (new Function('return '+root.render()))();
   }
 }));
