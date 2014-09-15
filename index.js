@@ -169,7 +169,10 @@
       var spos = match.index;
       var epos = spos + match[0].length;
 
-      if (match[3] && (match[3] != sym)){
+      if (match[3] && ! ((match[3] == sym)
+        || ((sym =='>') && (match[3] =='<'))
+        || ((sym =='<') && (match[3] =='>'))
+      )){
         console.error(str.substring(spos-5, epos+5));
         throw new Error('{{'+match[1] + ' at ' +(spos+2) + " doesn't match " + match[3] + '}} at ' +(epos-2));
       }
