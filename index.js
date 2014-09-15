@@ -30,7 +30,7 @@
   };
 
   blk['='] = function(str){
-    return '» out += ' + str + '; «';
+    return '» out += ' + str.replace(/\r|\n/g, '\\n') + '; «';
   };
 
   blk['@'] = function(str){
@@ -70,13 +70,13 @@
     var match, alias, location, re=/^\s*(\w+)/g;
 
     if (!(match = re.exec(str))) throw new Error('Import block missing alias');
-    alias = match.value;
+    alias = match[1];
     str = str.substr(re.lastIndex);
     if (!(match=parenthetical(str))) throw new Error('Import block missing template location');
     location = match.value;
     str = str.substr(match.pos);
 
-    return '»var ' + alias + ' = require' + location + ';';
+    return '»var ' + alias + ' = require' + location + ';«';
   };
 
   blk['>'] = function(str){
@@ -163,16 +163,16 @@
 
     var fn, match, re=/\{\{([%@\?:\+><!#]?)((?:(?!\{\{)[\s\S])*?)([%@\?:\+><!#]?)\}\}/;
 
-    str = str.replace(/\r|\n/g, '\\n');
+    //str = str.replace(/\r|\n/g, '\\n');
     while (match = re.exec(str)) {
       var sym = match[1] || '=';
       var spos = match.index;
       var epos = spos + match[0].length;
 
-      if (match[3] && ! ((match[3] == sym)
+      if (match[3] && (! ((match[3] == sym)
         || ((sym =='>') && (match[3] =='<'))
         || ((sym =='<') && (match[3] =='>'))
-      )){
+      ))){
         console.error(str.substring(spos-5, epos+5));
         throw new Error('{{'+match[1] + ' at ' +(spos+2) + " doesn't match " + match[3] + '}} at ' +(epos-2));
       }
@@ -184,9 +184,9 @@
         throw new Error(ex + ' in ' + sym + 'block between position ' + spos + ' and position ' +epos);
       }
     }
-    fn = str.replace(/«([\s\S]*?)»/g, function(m, o){
-      return "out += '" + o.replace(/\\'/g, '\\$&').replace(/'/g, '\\$&') + "';"
-    }).slice(1,-1);
+    fn = str.replace(/^\s*»|«\s*$/g, '').replace(/«([\s\S]*?)»/g, function(m, o){
+      return "out += '" + o.replace(/\\'/g, '\\$&').replace(/'/g, '\\$&').replace(/\r|\n/g, '\\n') + "';"
+    });
 
     if (options.src) {
       return "(function(name, definition){"
