@@ -7,9 +7,13 @@
   }
   else this[name] = definition();
 }('kata', function(){
-  var blk = {};
+  var blk = {}, Block;
+  var options = {
+    src: false
+    , plugins: {}
+  };
 
-  var Block = Object.create(Object.prototype, {
+  Block = Object.create(Object.prototype, {
     parse: {
       value: function(str){
         if (this.parsed) throw new Error('Attempting to reparse ' + this.symbol + ' block');
@@ -21,10 +25,15 @@
     , end: {value: null, writable: true}
     , addChild: {
       value: function(symbol, start){
-        symbol = symbol || '=';
-        if (! blk[symbol]) throw new Error('Unknown block type: '+symbol);
+        var match, re, proto;
+        if (!(proto = blk[symbol||'='])){
+          re = /^#(\w+)/;
+          if (!((match=re.exec(symbol)) && (proto = options.plugins[match[1]()]))){
+            throw new Error('Unknown block type: '+symbol);
+          }
+        }
         if (! this.children) this.children = [];
-        var n = this.children.push(Object.create(blk[symbol], {
+        var n = this.children.push(Object.create(proto, {
           start: {value: start || 0}
         }));
         return this.children[n-1];
@@ -46,7 +55,7 @@
     , addChild: {
       value: function(sym, start){
         if (this.children) throw new Error('Unexpected content after template definition');
-        if ('%' != sym) throw new Error('Expected Template block. Templates must begin with {{%');
+        if ('%' != sym) throw new Error('Expected Template block. Templates must begin with {{% ( not '+sym+')');
         return Block.addChild.call(this, sym, start);
       }
     }
@@ -186,7 +195,7 @@
           this.cond = match.value;
           str = str.substr(match.pos);
         }
-        Block.parse.call(this, str.substr(match.pos))
+        Block.parse.call(this, str);
         return this;
       }
     }
@@ -358,21 +367,17 @@
     throw new Error('Parenthetical missing )');
   }
 
-  return function(str, options){
+  return function(str, opts){
     var root = Object.create(blk['root'], {start: {value: 0}}), cur=root;
     var q = [root], tmp;
-    var match, re=/((?:(?!\{\{[%@\?:\+><!]?|[%@\?:\+><!]?\}\})[\s\S])*)(\{\{[%@\?:\+><!]?|[%@\?:\+><!]?\}\})/g;
-
-    var defaults = {
-      src: false
-      , plugins: {}
-    };
-    if (options){
-      Object.keys(defaults).forEach(function(k){
-        options[k] = options.hasOwnProperty(k) ? options[k] : defaults[k];
+    var match, re=/((?:(?!\{\{(?:[%@\?:\+><!]|#\w+)?|[%@\?:\+><!#]?\}\})[\s\S])*)(\{\{(?:[%@\?:\+><!]|#\w+)?|[%@\?:\+><!#]?\}\})/g;
+    if (opts){
+      Object.keys(options).forEach(function(k){
+        if (opts.hasOwnProperty(k)){
+          options[k] = opts[k];  
+        }
       });
     }
-    else options = options || defaults;
 
     while(q.length && (match = re.exec(str))){
       //Everything between the last match and now is content
