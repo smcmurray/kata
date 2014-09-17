@@ -46,6 +46,7 @@
             return o+b.rendered;
           }, '');
         }
+        else return '';
       }
     }
   });
