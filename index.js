@@ -94,7 +94,8 @@
           this.rendered = 'function ' + (this.name ? this.name : '') + this.args + "{"
             + "var out='';"
             + Block.render.call(this)
-            + "}";
+            + "}"
+            + "return out;";
         }
         return this.rendered;
       }
@@ -422,7 +423,7 @@
       +"    define(definition);"
       +"  }"
       +"  else this[name] = definition();"
-      +"}('template', function(require){ return " + root.render() + "}))";
+      +"}('template', function(require){ return " + root.render() + "}));";
     }
     else return (new Function('return '+root.render()))();
   }
