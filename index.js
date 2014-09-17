@@ -91,11 +91,11 @@
     , render: {
       value: function(){
         if (! this.rendered){
-          this.rendered = 'function ' + (this.name ? this.name : '') + this.args + "{"
+          this.rendered = "function " + (this.name ? this.name : '') + this.args + "{"
             + "var out='';"
             + Block.render.call(this)
-            + "}"
-            + "return out;";
+            + "return out;"
+            + "}";
         }
         return this.rendered;
       }
