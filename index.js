@@ -264,7 +264,7 @@
         if (!this.rendered){
           this.rendered = 'out+=(function(){'
             + Block.render.call(this)
-            + this.signature + ';}());';
+            + 'return ' + this.signature + ';}());';
         }
         return this.rendered;
       }
