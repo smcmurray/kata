@@ -2,14 +2,18 @@
   'use strict';
 
   var kata = require('kata');
-  var path = require('path');
   var fs = require('fs');
 
   module.exports = function(options){
+    if (typeof options === 'string'){
+      options = {src: options};
+    }
+    options.src = options.src;
+
     return function(req, res, next){
       if (! /\.js$/.test(req.path)) return next();
-      var src=path.join(options.src, req.path.replace(/(?:\.min)?\.js$/, '.kata'));
-      var dest=path.join(options.dest, req.path);
+      var src=req.path.replace('^'+req.baseurl, options.src).replace(/(?:\.min)?\.js$/, '.kata');
+      var dest=req.path.replace('^'+req.baseurl, options.dest||options.src);
  
       fs.stat(src, function(err, template){
         if (err) return next();
