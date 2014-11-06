@@ -70,7 +70,7 @@ Conditional block provide an if/else ability
 * `expression` - A Javascript expression. The contents of the block are rendered if the expression is truthy.
 * `body` - The body of the block contains the content you wish to render. It can contain all the blocks types. It can also contain any non-block content you wish to render.
 
-### <a name="Else"></a> Else block {{|(expression) body [|]}}
+### <a name="Else"></a> Else block {{:(expression) body [:]}}
 
 Else blocks provide the 'else' ability of a Conditional block. They can take an optional expression to take on an 'else if ' nature.
 
