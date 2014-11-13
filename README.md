@@ -53,7 +53,7 @@ Contents of Interpolate blocks are interpolated as a javascript expression and r
 
 * `body` - A javascript expression. Interpolate blocks cannot contain any block types.
 
-### <a name="Iterate"></a> Iterate block {{@[expression](value [, index [, array]]) body [@]}}
+### <a name="Iterate"></a> Iterate block {{@\[expression\](value [, index [, array]]) body [@]}}
 
 Iterate blocks perform a Javascript forEach iteration over the results of the provided expression.
 
