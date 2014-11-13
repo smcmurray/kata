@@ -53,11 +53,11 @@ Contents of Interpolate blocks are interpolated as a javascript expression and r
 
 * `body` - A javascript expression. Interpolate blocks cannot contain any block types.
 
-### <a name="Iterate"></a> Iterate block {{@(expression)(value [, index [, array]]) body [@]}}
+### <a name="Iterate"></a> Iterate block {{@[expression](value [, index [, array]]) body [@]}}
 
 Iterate blocks perform a Javascript forEach iteration over the results of the provided expression.
 
-* `expression` - a Javascript expression that resolves to an Array
+* `expression` - a Javascript expression that resolves to an Array. Must be wrapped in '[]' square brackets.
 * `value` - the name of the variable to be assigned the value of each element in the array during the iteration
 * `index` - (optional) the name of the variable to be assigned the value of each element's index in the array during the iteration
 * `array` - (optional) the name of the variable to be assigned the value of the array over which the template iterates
@@ -70,7 +70,7 @@ Conditional block provide an if/else ability
 * `expression` - A Javascript expression. The contents of the block are rendered if the expression is truthy.
 * `body` - The body of the block contains the content you wish to render. It can contain all the blocks types. It can also contain any non-block content you wish to render.
 
-### <a name="Else"></a> Else block {{|(expression) body [|]}}
+### <a name="Else"></a> Else block {{:(expression) body [:]}}
 
 Else blocks provide the 'else' ability of a Conditional block. They can take an optional expression to take on an 'else if ' nature.
 

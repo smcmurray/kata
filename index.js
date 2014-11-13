@@ -121,7 +121,7 @@
     , render: {
       value: function(){
         if (! this.rendered){
-          this.rendered = 'out += (' + this.expr + ');';
+          this.rendered = 'out += (' + this.expr + ') || "";';
         }
         return this.rendered;
       }
