@@ -138,8 +138,8 @@
     , parse: {
       value: function(str){
         var match;
-        if (!(match = parenthetical(str))) throw new Error('Iterate block missing iterable');
-        this.iter = match.value;
+        if (!(match = parenthetical(str, '[', ']'))) throw new Error('Iterate block missing iterable');
+        this.iter = match.value.replace(/^\[/, '(').replace(/\]$/, ')');
         str = str.substr(match.pos);
         if (!(match = parenthetical(str))) throw new Error('Iterate block missing arguments');
         this.args = match.value;
@@ -349,15 +349,17 @@
     }
   });
 
-  function parenthetical(str){
-    var match, re = /^\s*\(/g;
+  function parenthetical(str, s, e){
+    var match, re;
     var expr='', count=0;
+    var es = '\\' + (s = s || '(');
+    var ee = '\\' + (e = e || ')');
     
-    if (! /^\s*\(/.test(str)) return;
+    if (! (new RegExp('^\\s*'+es)).test(str)) return;
 
-    re = /\s*((?:(?!\{\{|\(|\)|\}\})[\s\S])*?)(\(|\))/g;
+    re = new RegExp('\\s*((?:(?!\\{\\{|\\}\\}|'+es+'|'+ee+')[\\s\\S])*?)('+es+'|'+ee+')', 'g');
     while (match = re.exec(str)){
-      if ('(' === match[2]) count += 1;
+      if (s === match[2]) count += 1;
       else count -=1;
       expr += (match[1] ? match[1]: '') + match[2];
       if (! count) {
@@ -366,7 +368,7 @@
         };
       }
     }
-    throw new Error('Parenthetical missing )');
+    throw new Error('Parenthetical missing ' + e);
   }
 
   return function(str, opts){
@@ -415,16 +417,16 @@
 
     if (options.src) {
       return "(function(name, definition){"
-      +"  'use strict';"
+        +"  'use strict';"
 
-      +"  if (typeof module != 'undefined') {"
-      +"    module.exports = definition(require);"
-      +"  }"
-      +"  else if (typeof define == 'function' && typeof define.amd == 'object') {"
-      +"    define(definition);"
-      +"  }"
-      +"  else this[name] = definition();"
-      +"}('template', function(require){ return " + root.render() + "}));";
+        +"  if (typeof module != 'undefined') {"
+        +"    module.exports = definition(require);"
+        +"  }"
+        +"  else if (typeof define == 'function' && typeof define.amd == 'object') {"
+        +"    define(definition);"
+        +"  }"
+        +"  else this[name] = definition();"
+        +"}('template', function(require){ return " + root.render() + "}));";
     }
     else return (new Function('return '+root.render()))();
   }
