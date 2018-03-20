@@ -2,6 +2,7 @@ let re = / on([a-z]+)\s*=\s*(["'])?\s*?$/
   ,quote = {"'": /^\s*'/, '"': /^\s*"/}
   ,ehs = 'data-kata-ev'
   ,ecs = 'data-kata-embed'
+  ,cf = /^data-kata-embed:(\d+)$/
 
 export default function(s, ...expr){
   let e,embeds = []
@@ -28,7 +29,7 @@ export default function(s, ...expr){
           ,11 // DocumentFragment
         ].includes(ae.nodeType)){
           let i = embeds.push(ae)-1
-          predoc += `<div ${ecs}="${i}"></div>`
+          predoc += `<!--${ecs}:${i}-->`
         }
         else predoc += ae
       }
@@ -41,10 +42,7 @@ export default function(s, ...expr){
     e.addEventListener(h.event, h.handler)
     e.removeAttribute(ehs)
   })
-  doc.querySelectorAll(`*[${ecs}]`).forEach(e=>{
-    let c = embeds[e.getAttribute(ecs)]
-    e.before(c, e)
-    e.remove()
-  })
+  let m,n,walker = document.createNodeIterator(doc, NodeFilter.SHOW_COMMENT, { acceptNode: function(n){if (m = n.textContent.match(cf)) return NodeFilter.FILTER_ACCEPT} })
+  while (n=walker.nextNode()) n.replaceWith(embeds[m[1]])
   return 1==doc.childNodes.length ? doc.firstChild : doc
 }
