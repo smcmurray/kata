@@ -33,7 +33,7 @@ let todos = [
 html`<span>${new Date().toDateString()}</span>
 html`
   <div>
-    ${todos.map(todo=>html`<div>${todo}</div>`)
+    ${todos.map(todo=>html`<div>${todo}</div>`)}
   </div>
 `
 ````
