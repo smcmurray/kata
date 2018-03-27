@@ -16,7 +16,7 @@ export default function(s, ...expr){
         if (q && strings[0]){
           strings[0] = strings[0].replace(quote[q], '')
         }
-        return ` ${ehs}="${i}"`
+        return ` ${ehs}-${event}="${i}"`
       })
     }
     else {
@@ -37,11 +37,13 @@ export default function(s, ...expr){
   }
   predoc+=strings.shift()
   let doc = document.createRange().createContextualFragment(predoc.trim())
-  doc.querySelectorAll(`*[${ehs}]`).forEach(e=>{
-    let h = handlers[e.getAttribute(ehs)]
-    e.addEventListener(h.event, h.handler)
-    e.removeAttribute(ehs)
-  })
+  for (let e of new Set(handlers.map(h=>h.event))){
+    for (let el of Array.from(doc.querySelectorAll(`*[${ehs}-${e}]`))){
+      let h = handlers[el.getAttribute(`${ehs}-${e}`)]
+      el.addEventListener(h.event, h.handler)
+      el.removeAttribute(`${ehs}-${e}`)
+    }
+  }
   let m,n,walker = document.createNodeIterator(doc, NodeFilter.SHOW_COMMENT, { acceptNode: function(n){if (m = n.textContent.match(cf)) return NodeFilter.FILTER_ACCEPT} })
   while (n=walker.nextNode()) n.replaceWith(embeds[m[1]])
   return 1==doc.childNodes.length ? doc.firstChild : doc
